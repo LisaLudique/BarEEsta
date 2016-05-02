@@ -6,8 +6,7 @@
  Hitachi HD44780 driver. There are many of them out there, and you
  can usually tell them by the 16-pin interface.
 
- This sketch prints "Hello World!" to the LCD
- and shows the time.
+ This sketch shows the cost and (if triggered) a warning that too much alcohol was consumed.
 
   The circuit:
  * LCD RS pin to digital pin 4
@@ -224,7 +223,7 @@ void loop() {
 
 void refill() 
 {
-  while(isEmpty() && !digitalRead(PHOTODIODE_PIN)) // hasn't met high threshold
+  while(isEmpty() && !digitalRead(PHOTODIODE_PIN) && !alcMax()) // hasn't met high threshold
   {
     digitalWrite(drinkPin, HIGH);
     poured = true;
@@ -234,7 +233,9 @@ void refill()
 
 boolean alcMax()
 {
-  return (timeElapsed > 59 && alc > ALC_LIMIT);
+  if (timeElapsed > 3600 && alc > ALC_LIMIT)
+    Serial.println("no more alcohol");
+  return (timeElapsed > 3600 && alc > ALC_LIMIT);
 }
 
 boolean isEmpty()
