@@ -115,9 +115,6 @@ void loop() {
       digitalWrite(WATER_PIN, LOW);
       digitalWrite(JUICE_PIN, LOW);
       digitalWrite(BEER_PIN, LOW);
-      totalCost = 0.00;
-      alc = 0;
-      timeElapsed = 0;
       if (digitalRead(X_PIN) && digitalRead(Y_PIN) && alcMax())
         curState = 0;
       else if (digitalRead(X_PIN) && digitalRead(Y_PIN))
@@ -177,6 +174,7 @@ void loop() {
       if (poured)
       {
         totalCost += BEER_COST;
+        alc++;
         poured = false;
         pouredAlc = true;
       }
