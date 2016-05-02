@@ -49,7 +49,7 @@ const int JUICE_PIN = 7;
 const int BEER_PIN = 8;
 const int X_PIN = 2;
 const int Y_PIN = 3;
-const int PRESSURE_PIN = 1;
+const int PRESSURE_PIN = A0;
 const int PHOTODIODE_PIN = 0;
 // declare global constants
 const double WATER_COST = 0.00;
@@ -128,6 +128,7 @@ void loop() {
       break;
         
     case 2: // B: water selected
+      Serial.println("water");
       drinkPin = WATER_PIN;
       refill();
       if (poured)
@@ -148,6 +149,7 @@ void loop() {
       break;
 
     case 3: // C: juice selected
+      Serial.println("juice");
       drinkPin = JUICE_PIN;
       refill();
       if (poured)
@@ -169,6 +171,7 @@ void loop() {
 
 
     case 4: // D: beer selected
+      Serial.println("beer");
       drinkPin = BEER_PIN;
       refill();
       if (poured)
@@ -205,8 +208,15 @@ void loop() {
     alc = 0;
   }
   
-  lcd.setCursor(0, 1);
+  lcd.setCursor(0, 0);
+  lcd.print("Cost: ");
   lcd.print(totalCost);
+  
+  if (alcMax())
+  {
+    lcd.setCursor(0, 1);
+    lcd.print("Too much alcohol");
+  }
   
   delay(cycTime);
 
@@ -214,7 +224,7 @@ void loop() {
 
 void refill() 
 {
-  while(!digitalRead(PRESSURE_PIN) && !digitalRead(PHOTODIODE_PIN)) // hasn't met high threshold
+  while(isEmpty() && !digitalRead(PHOTODIODE_PIN)) // hasn't met high threshold
   {
     digitalWrite(drinkPin, HIGH);
     poured = true;
@@ -225,4 +235,9 @@ void refill()
 boolean alcMax()
 {
   return (timeElapsed > 59 && alc > ALC_LIMIT);
+}
+
+boolean isEmpty()
+{
+  return (analogRead(PRESSURE_PIN) < 10);
 }
