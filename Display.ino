@@ -51,10 +51,11 @@ const int Y_PIN = 3;
 const int PRESSURE_PIN = A0;
 const int PHOTODIODE_PIN = 0;
 // declare global constants
-const double WATER_COST = 0.00;
+const double WATER_COST = 0.10;
 const double JUICE_COST = 2.50;
 const double BEER_COST = 4.00;
 const int ALC_LIMIT = 2;
+// declare flags and accumulators
 volatile int drinkPin;
 volatile double totalCost = 0.00;
 volatile int timeElapsed = 0;
@@ -83,7 +84,7 @@ void setup() {
   pinMode(BEER_PIN, OUTPUT);
   pinMode(X_PIN, INPUT);
   pinMode(Y_PIN, INPUT);
-  pinMode(PRESSURE_PIN, INPUT);
+  //pinMode(PRESSURE_PIN, INPUT);
   pinMode(PHOTODIODE_PIN, INPUT);
   
   if (debug)
@@ -107,6 +108,10 @@ void loop() {
     Serial.print("Current State = ");
     Serial.println(curState);
   }
+  Serial.println("Pressure:");
+  Serial.println(analogRead(PRESSURE_PIN));
+  Serial.println("Covered?");
+  Serial.println(!digitalRead(PHOTODIODE_PIN));
 
   switch (curState)
   {
@@ -129,13 +134,12 @@ void loop() {
     case 2: // B: water selected
       Serial.println("water");
       drinkPin = WATER_PIN;
-      refill();
-      if (poured)
+      if (isEmpty() && !digitalRead(PHOTODIODE_PIN))
       {
         totalCost += WATER_COST;
-        poured = false;
+        curState = 5;
       }
-      if (digitalRead(X_PIN) && digitalRead(Y_PIN) && alcMax())
+      else if (digitalRead(X_PIN) && digitalRead(Y_PIN) && alcMax())
         curState = 2;
       else if (digitalRead(X_PIN) && digitalRead(Y_PIN))
         curState = 4;
@@ -150,13 +154,12 @@ void loop() {
     case 3: // C: juice selected
       Serial.println("juice");
       drinkPin = JUICE_PIN;
-      refill();
-      if (poured)
+      if (isEmpty() && !digitalRead(PHOTODIODE_PIN))
       {
         totalCost += JUICE_COST;
-        poured = false;
+        curState = 5;
       }
-      if (digitalRead(X_PIN) && digitalRead(Y_PIN) && alcMax())
+      else if (digitalRead(X_PIN) && digitalRead(Y_PIN) && alcMax())
         curState = 3;
       else if (digitalRead(X_PIN) && digitalRead(Y_PIN))
         curState = 4;
@@ -172,15 +175,16 @@ void loop() {
     case 4: // D: beer selected
       Serial.println("beer");
       drinkPin = BEER_PIN;
-      refill();
-      if (poured)
+      if (isEmpty() && !digitalRead(PHOTODIODE_PIN) && alcMax())
+        curState = 0;
+      else if (isEmpty() && !digitalRead(PHOTODIODE_PIN))
       {
         totalCost += BEER_COST;
         alc++;
-        poured = false;
         pouredAlc = true;
+        curState = 5;
       }
-      if (digitalRead(X_PIN) && digitalRead(Y_PIN) && alcMax())
+      else if (digitalRead(X_PIN) && digitalRead(Y_PIN) && alcMax())
         curState = 0;
       else if (digitalRead(X_PIN) && digitalRead(Y_PIN))
         curState = 4;
@@ -190,6 +194,26 @@ void loop() {
         curState = 2;
       else
         curState = 4;
+      break;
+
+    case 5: // E: refilling
+      if(!isFull() && !digitalRead(PHOTODIODE_PIN)) // hasn't met high threshold
+      {
+        digitalWrite(drinkPin, HIGH);
+        poured = true;
+        curState = 5;
+      }
+      else if (isFull())
+      {
+        Serial.println("Is Full");
+        digitalWrite(drinkPin, LOW);
+        curState = 1;
+      }
+      else
+      {
+        digitalWrite(drinkPin, LOW);
+        curState = 1;
+      }
       break;
 
     default:
@@ -217,28 +241,26 @@ void loop() {
     lcd.print("Too much alcohol");
   }
   
+
   delay(cycTime);
 
 }
 
-void refill() 
-{
-  while(isEmpty() && !digitalRead(PHOTODIODE_PIN) && !alcMax()) // hasn't met high threshold
-  {
-    digitalWrite(drinkPin, HIGH);
-    poured = true;
-  }
-  digitalWrite(drinkPin, LOW);
-}
 
 boolean alcMax()
 {
-  if (timeElapsed > 3600 && alc > ALC_LIMIT)
+  if (timeElapsed < 3600 && alc > ALC_LIMIT)
     Serial.println("no more alcohol");
-  return (timeElapsed > 3600 && alc > ALC_LIMIT);
+  return (timeElapsed < 3600 && alc > ALC_LIMIT);
 }
 
 boolean isEmpty()
 {
-  return (analogRead(PRESSURE_PIN) < 10);
+  return (analogRead(PRESSURE_PIN) > 400); // start filling if > 4V
 }
+
+boolean isFull()
+{
+  return (analogRead(PRESSURE_PIN) < 130); // stop filling if < 3.5V
+}
+
