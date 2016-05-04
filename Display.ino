@@ -256,11 +256,11 @@ boolean alcMax()
 
 boolean isEmpty()
 {
-  return (analogRead(PRESSURE_PIN) > 400); // start filling if > 4V
+  return (analogRead(PRESSURE_PIN) > 400);
 }
 
 boolean isFull()
 {
-  return (analogRead(PRESSURE_PIN) < 130); // stop filling if < 3.5V
+  return (analogRead(PRESSURE_PIN) < 130);
 }
 
