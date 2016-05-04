@@ -50,6 +50,7 @@ const int X_PIN = 2;
 const int Y_PIN = 3;
 const int PRESSURE_PIN = A0;
 const int PHOTODIODE_PIN = 0;
+//const int FULL_PIN = 1;
 // declare global constants
 const double WATER_COST = 0.10;
 const double JUICE_COST = 2.50;
@@ -86,6 +87,7 @@ void setup() {
   pinMode(Y_PIN, INPUT);
   //pinMode(PRESSURE_PIN, INPUT);
   pinMode(PHOTODIODE_PIN, INPUT);
+  //pinMode(FULL_PIN, OUTPUT);
   
   if (debug)
   {
@@ -119,8 +121,9 @@ void loop() {
       digitalWrite(WATER_PIN, LOW);
       digitalWrite(JUICE_PIN, LOW);
       digitalWrite(BEER_PIN, LOW);
+      //digitalWrite(FULL_PIN, LOW);
       if (digitalRead(X_PIN) && digitalRead(Y_PIN) && alcMax())
-        curState = 0;
+        curState = 1;
       else if (digitalRead(X_PIN) && digitalRead(Y_PIN))
         curState = 4;
       else if (digitalRead(X_PIN) && !digitalRead(Y_PIN))
@@ -176,7 +179,7 @@ void loop() {
       Serial.println("beer");
       drinkPin = BEER_PIN;
       if (isEmpty() && !digitalRead(PHOTODIODE_PIN) && alcMax())
-        curState = 0;
+        curState = 1;
       else if (isEmpty() && !digitalRead(PHOTODIODE_PIN))
       {
         totalCost += BEER_COST;
@@ -185,7 +188,7 @@ void loop() {
         curState = 5;
       }
       else if (digitalRead(X_PIN) && digitalRead(Y_PIN) && alcMax())
-        curState = 0;
+        curState = 1;
       else if (digitalRead(X_PIN) && digitalRead(Y_PIN))
         curState = 4;
       else if (digitalRead(X_PIN) && !digitalRead(Y_PIN))
@@ -207,6 +210,7 @@ void loop() {
       {
         Serial.println("Is Full");
         digitalWrite(drinkPin, LOW);
+        //digitalWrite(FULL_PIN, HIGH);
         curState = 1;
       }
       else
@@ -256,11 +260,11 @@ boolean alcMax()
 
 boolean isEmpty()
 {
-  return (analogRead(PRESSURE_PIN) > 400);
+  return (analogRead(PRESSURE_PIN) > 400); // start filling if > 4V
 }
 
 boolean isFull()
 {
-  return (analogRead(PRESSURE_PIN) < 130);
+  return (analogRead(PRESSURE_PIN) < 250); // stop filling if < 3.5V
 }
 
